@@ -33,13 +33,13 @@ namespace Rover
                 case '.':
                     return 1;
                 case '*':
-                    return 100;
+                    return 101;
                 case '0':
-                    return 300;
+                    return 301;
                 case '!':
-                    return 1000;
+                    return 1001;
             }
-            return 10000;
+            return 10001;
         }
         public char GetDirection(char nextState)
         {
@@ -67,9 +67,9 @@ namespace Rover
                         case 'D':
                             return 'F';
                         case 'L':
-                            return 'L';
-                        case 'R':
                             return 'R';
+                        case 'R':
+                            return 'L';
                         default:
                             return 'F';
                     }
@@ -109,6 +109,7 @@ namespace Rover
         {
             bool first = true;
             int test = 0;
+            char lastDirection;
             int[,] estim = new int[15, 15];
             char[,] res = new char[15, 15]; // вместо пути - направление движения в следующую точку
             string[,] tst = new string[15, 15];// весь путь для тестирования
@@ -142,19 +143,28 @@ namespace Rover
                         break;
                 }
                 visited[y, x] = true;
+                if (tst[y, x] != null && tst[y, x].Length > 0)
+                {
+                    lastDirection = tst[y, x][tst[y, x].Length - 1];//куда мы ехали к этому моменту
+                }
+                else
+                {
+                    lastDirection = ' ';
+                }
                 if(x < 14 && !visited[y, x + 1])
                 {
                     if (first)
                     {
                         estim[y, x + 1] = EstimatePoint(x + 1, y) +
-                                         ((state.direction == 'L') ? EstimatePoint(x, y) : 0);
+                                         ((state.direction == 'R') ? 0 : EstimatePoint(x, y));
                         
                         res[y, x + 1] = GetDirection('R');
                         tst[y, x + 1] = "R";
                     }
                     else
                     {
-                        test = estim[y, x] + EstimatePoint(x + 1, y);
+                        test = estim[y, x] + EstimatePoint(x + 1, y) + 
+                                            ((lastDirection == 'R') ? 0 : EstimatePoint(x, y));//еще нужно повернуть
                         if (test < estim[y, x + 1] || estim[y, x + 1] == 0)
                         {
                             estim[y, x + 1] = test;
@@ -168,13 +178,14 @@ namespace Rover
                     if (first)
                     {
                         estim[y, x - 1] = EstimatePoint(x - 1, y) +
-                                         ((state.direction == 'R') ? EstimatePoint(x, y) : 0);
+                                         ((state.direction == 'L') ? 0 : EstimatePoint(x, y));
                         res[y, x - 1] = GetDirection('L');
                         tst[y, x - 1] = "L";
                     }
                     else
                     {
-                        test = estim[y, x] + EstimatePoint(x - 1, y);
+                        test = estim[y, x] + EstimatePoint(x - 1, y) +
+                                            ((lastDirection == 'L') ? 0 : EstimatePoint(x, y));//еще нужно повернуть
                         if (test < estim[y, x - 1] || estim[y, x - 1] == 0)
                         {
                             estim[y, x - 1] = test;
@@ -188,13 +199,14 @@ namespace Rover
                     if (first)
                     {
                         estim[y + 1, x] = EstimatePoint(x, y + 1) +
-                                         ((state.direction == 'U') ? EstimatePoint(x, y) : 0);
+                                         ((state.direction == 'D') ? 0 : EstimatePoint(x, y));
                         res[y + 1, x] = GetDirection('D');
                         tst[y + 1, x] = "D";
                     }
                     else
                     {
-                        test = estim[y, x] + EstimatePoint(x, y + 1);
+                        test = estim[y, x] + EstimatePoint(x, y + 1) +
+                                            ((lastDirection == 'D') ? 0 : EstimatePoint(x, y));//еще нужно повернуть
                         if (test < estim[y + 1, x] || estim[y + 1, x] == 0)
                         {
                             estim[y + 1, x] = test;
@@ -208,13 +220,14 @@ namespace Rover
                     if (first)
                     {
                         estim[y - 1, x] = EstimatePoint(x, y - 1) +
-                                         ((state.direction == 'D') ? EstimatePoint(x, y) : 0);
+                                         ((state.direction == 'U') ? 0 : EstimatePoint(x, y));
                         res[y - 1, x] = GetDirection('U');
                         tst[y - 1, x] = "U";
                     }
                     else
                     {
-                        test = estim[y, x] + EstimatePoint(x, y - 1);
+                        test = estim[y, x] + EstimatePoint(x, y - 1) +
+                                            ((lastDirection == 'U') ? 0 : EstimatePoint(x, y));//еще нужно повернуть
                         if (test < estim[y - 1, x] || estim[y - 1, x] == 0)
                         {
                             estim[y - 1, x] = test;
@@ -245,7 +258,7 @@ namespace Rover
             {
                 y0 = 7;
             }
-            //Console.WriteLine(tst[7 + y0, 7 - x0]);
+            //Console.WriteLine(tst[7 + y0, 7 - x0]); uncomment for test
             return res[7 + y0, 7 - x0];
         }
     }
@@ -273,7 +286,8 @@ namespace Rover
     class Program
     {
         static void Main(string[] args)
-        {   
+        {
+            //Console.SetIn(new System.IO.StreamReader((System.IO.File.OpenRead("...")))); uncomment for test
             Rover rover = new Rover();
             Console.WriteLine(rover.Decide());
         }
